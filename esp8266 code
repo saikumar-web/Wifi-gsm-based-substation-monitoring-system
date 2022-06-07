@@ -1,0 +1,231 @@
+
+#define BLYNK_PRINT Serial
+#define BLYNK_TEMPLATE_ID "TMPLDjhQW241"
+#define BLYNK_DEVICE_NAME "cooler"
+#define BLYNK_AUTH_TOKEN "DLQNJH4Xk9NRMoa7L1sE1jbiYh8FaYm-"
+#include<BlynkSimpleEsp8266.h>;
+#include <ESP8266WiFi.h>
+#include <WiFiClient.h>
+#include <WiFiClientSecure.h>
+#include <WiFiServer.h>
+#include "ThingSpeak.h"
+char auth[]=BLYNK_AUTH_TOKEN;
+
+char ssid[] = "Mm";   // your network SSID (name) 
+char pass[] = "sailusai1";   // your network password
+
+WiFiClient  client;
+unsigned long counterChannelNumber =1561089;
+unsigned long ccn2=1611357;// Channel ID
+const char * myCounterReadAPIKey ="4AAIUU0IHWEK5AID"; // Read API Key
+const char *mywr="W1UCA77LJ18VU3XN";
+int a,b,c,d,t=0,k=0,j=0,l=0,s;
+long temp,temp1,temp2,temp3;
+
+void setup() {
+    // Set up LED
+    pinMode(1,OUTPUT);
+    pinMode(2,OUTPUT);
+    pinMode(3,OUTPUT);
+    pinMode(4,OUTPUT);
+  Serial.begin(115200);  
+    initWiFi();
+  ThingSpeak.begin(client);
+  Blynk.begin(auth,ssid,pass);
+}
+BLYNK_WRITE(V0)
+{
+  int pin0=param.asInt();
+  a=pin0;
+  if(a==1)
+  {
+    digitalWrite(1,HIGH);
+  }
+  else
+  {
+    digitalWrite(1,LOW);
+  }
+  ThingSpeak.writeField(ccn2,1,a,mywr);
+  
+}
+BLYNK_WRITE(V1)
+{
+  int p1=param.asInt();
+  b=p1;
+    if(b==1)
+  {
+    digitalWrite(2,HIGH);
+  }
+  else
+  {
+    digitalWrite(2,LOW);
+  }
+  ThingSpeak.writeField(ccn2,2,b,mywr);
+  
+  
+}
+BLYNK_WRITE(V2)
+{
+  int p2=param.asInt();
+  c=p2;
+    if(c==1)
+  {
+    digitalWrite(3,HIGH);
+  }
+  else
+  {
+    digitalWrite(3,LOW);
+  }
+  ThingSpeak.writeField(ccn2,3,c,mywr);
+  
+  
+  
+}
+BLYNK_WRITE(V3)
+{
+  int p3=param.asInt();
+  d=p3;
+    if(d==1)
+  {
+    digitalWrite(4,HIGH);
+  }
+  else
+  {
+    digitalWrite(4,LOW);
+  }
+  ThingSpeak.writeField(ccn2,4,d,mywr);
+  
+  
+  
+}
+
+void loop() {
+  
+   Blynk.run();
+  delay(15000);
+  temp = ThingSpeak.readLongField(counterChannelNumber,1, myCounterReadAPIKey);
+  temp1 = ThingSpeak.readLongField(counterChannelNumber,2, myCounterReadAPIKey);
+  temp2 = ThingSpeak.readLongField(counterChannelNumber,3, myCounterReadAPIKey);
+  temp3 = ThingSpeak.readLongField(counterChannelNumber,4, myCounterReadAPIKey);
+  long statusCode = ThingSpeak.getLastReadStatus();
+  if (statusCode == 200)
+  {  
+    if(temp>1)
+    {
+      ThingSpeak.writeField(ccn2,1,0,mywr);
+      digitalWrite(1,LOW);
+      if(t==0){
+      
+        sendsms();
+        t=1;
+      }
+      
+      delay(16000);
+    }
+    else
+    {
+      t=0;
+    }
+    if(temp1>16)
+    {
+      ThingSpeak.writeField(ccn2,2,0,mywr);
+      digitalWrite(2,LOW);
+      if(k==0){
+       
+        sendsms();
+        k=1;
+      }
+      delay(16000);
+    }
+    else
+    {
+      k=0;
+    }
+    if(temp2>16)
+    {
+      ThingSpeak.writeField(ccn2,3,0,mywr);
+      digitalWrite(3,LOW);
+      if(j==0){
+       
+        sendsms();
+        j=1;
+      }
+      delay(16000);
+    }
+    else{
+      j=0;
+    }
+    if(temp3>10006)
+    {
+      ThingSpeak.writeField(ccn2,4,0,mywr);
+      digitalWrite(4,LOW);
+      if(l==0){
+        
+        sendsms();
+        l=1;
+      }
+      delay(16000);
+      
+    }
+    else{
+      l=0;
+    }
+    Serial.println(temp);
+    Serial.println(temp1);
+    Serial.println(temp2);
+    Serial.println(temp3);
+  }
+  else
+  {
+    Serial.println("Unable to read channel / No internet connection");
+  }
+ 
+  
+  
+  
+  Serial.println(a);
+  Serial.println(b);
+  Serial.println(c);
+  Serial.println(d);
+  
+}
+void initWiFi() {
+  WiFi.mode(WIFI_STA);
+  WiFi.begin(ssid,pass);
+  Serial.print("Connecting to WiFi ..");
+  while (WiFi.status()!= WL_CONNECTED) {
+    Serial.print('.');
+    delay(1000);
+  }
+  Serial.println(WiFi.localIP());
+}
+void sendsms(){
+      Serial.print("AT");
+    delay(1000);         
+    Serial.println();
+    Serial.println("AT+CMGF=1"); 
+    Serial.println();
+    Serial.print("AT+CMGS=");    
+    Serial.print("\"+919381390216\"");
+    Serial.println();
+    delay(1000);
+    if(temp>1)
+    {
+      Serial.print("over current at load 1");
+    }
+    if(temp1>16)
+    {
+      Serial.print("over current at load 2");
+    }
+    if(temp2>16){
+      Serial.print("over current at load 3");
+    }
+    if(temp3>10006)
+    {
+      Serial.print("over current at load 4");
+    }
+    
+    delay(1000);
+    Serial.println();
+    Serial.write(26); 
+}
